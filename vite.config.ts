@@ -3,7 +3,7 @@ import { defineConfig } from 'vite';
 export default defineConfig({
   // Für GitHub Pages: Repository-Name als base setzen
   // Ändere 'ifc-viewer' zu deinem Repository-Namen!
-  base: '/ifc/',
+  base: '/ifc-viewer/',
   
   build: {
     target: 'esnext',
