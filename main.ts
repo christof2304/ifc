@@ -6,16 +6,14 @@ import './style.css';
 // ============================================
 // APP STATE
 // ============================================
-interface AppState {
+const state: {
     components: OBC.Components | null;
     world: any;
-    fragments: OBC.FragmentsManager | null;
-    ifcLoader: OBC.IfcLoader | null;
+    fragments: any;
+    ifcLoader: any;
     highlighter: any;
     currentModel: any;
-}
-
-const state: AppState = {
+} = {
     components: null,
     world: null,
     fragments: null,
@@ -76,20 +74,21 @@ async function initEngine() {
     // Engine starten
     state.components.init();
     
-    // FragmentsManager initialisieren
+    // FragmentsManager holen (kein init() in v2.3.0)
     state.fragments = state.components.get(OBC.FragmentsManager);
-    
-    // Model zur Szene hinzufügen wenn geladen
-    state.fragments.onFragmentsLoaded.add((model) => {
-        state.world.scene.three.add(model);
-        state.currentModel = model;
-    });
     
     // IFC Loader konfigurieren
     state.ifcLoader = state.components.get(OBC.IfcLoader);
     await state.ifcLoader.setup();
     
-    // Highlighter für Selektion
+    // Event wenn Model geladen wird
+    if (state.fragments.onFragmentsLoaded) {
+        state.fragments.onFragmentsLoaded.add((model: any) => {
+            state.currentModel = model;
+        });
+    }
+    
+    // Highlighter für Selektion (optional)
     try {
         state.highlighter = state.components.get(OBCF.Highlighter);
         state.highlighter.setup({ world: state.world });
@@ -122,11 +121,10 @@ async function loadIFC(file: File) {
         // Altes Model entfernen falls vorhanden
         if (state.currentModel && state.world) {
             state.world.scene.three.remove(state.currentModel);
-            state.fragments?.dispose();
         }
         
-        // IFC laden
-        const model = await state.ifcLoader!.load(data);
+        // IFC laden - load() gibt das Model zurück
+        const model = await state.ifcLoader.load(data);
         state.world.scene.three.add(model);
         state.currentModel = model;
         
@@ -173,7 +171,7 @@ function resetCamera() {
 // ============================================
 // PROPERTIES PANEL
 // ============================================
-async function showProperties(fragmentIdMap: any) {
+function showProperties(fragmentIdMap: any) {
     if (!fragmentIdMap || Object.keys(fragmentIdMap).length === 0) {
         clearProperties();
         return;
@@ -265,8 +263,7 @@ initEngine().catch(err => {
         </svg>
         <h2 style="color: #ef4444;">Ladefehler</h2>
         <p style="max-width: 300px; line-height: 1.5;">
-            ${err.message}<br><br>
-            Bitte überprüfe die Browser-Konsole für Details.
+            ${err.message}
         </p>
     `;
 });
